@@ -1,13 +1,15 @@
 include("lexer.jl")
+include("ast.jl")
 
 let
-    fid = open("fib.kl", "r")
-    lex = Lexer(fid, read(fid, Char))
+    filename = "fib.kl"
+    lex = Lexer(filename)
 
-    tok = gettok!(lex)
-    @show tok
-    while tok.tok != tok_eof
+    while true
         tok = gettok!(lex)
-        @show tok
+        tok.tok == tok_eof && break
+        if tok.tok == tok_number
+        elseif tok.tok == tok_identifier
+        end
     end
 end

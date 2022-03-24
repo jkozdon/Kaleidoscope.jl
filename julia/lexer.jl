@@ -21,9 +21,24 @@ end
 mutable struct Lexer{T}
     fid::T
     last::Char
+    next::Token
+    function Lexer(filename::String)
+        fid = open(filename, "r")
+        last = read(fid, Char)
+        next = Token(tok_misc, "")
+        lex = new{typeof(fid)}(fid, last, next)
+        gettok!(lex)
+        return lex
+    end
 end
 
 function gettok!(lex)
+    curtok = lex.next
+    lex.next = getnexttok!(lex)
+    return curtok
+end
+
+function getnexttok!(lex)
     buf = IOBuffer()
 
     # Clear whitespace
