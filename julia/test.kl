@@ -1,0 +1,14 @@
+def one()
+  1
+
+def two()
+  2.0
+
+def half()
+  0.50000
+
+def identity(x)
+  x
+
+# def axpy(a x y)
+#   a * x + y

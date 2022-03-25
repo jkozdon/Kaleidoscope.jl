@@ -1,4 +1,16 @@
+abstract type AbstractExprAST end
+
 struct EmptyAST <: AbstractExprAST end
+
+struct NumberExprAST <: AbstractExprAST
+    val::Float64
+    NumberExprAST(str::String) = new(parse(Float64, str))
+end
+
+struct VariableExprAST <: AbstractExprAST
+    val::String
+    VariableExprAST(str::String) = new(str)
+end
 
 struct PrototypeAST <: AbstractExprAST
     name::String
@@ -40,13 +52,50 @@ struct FunctionAST
     end
 end
 
-function ParseExpression(lex::Lexer)
+function ParseExpression(lex::Lexer, t = gettok!(lex))
+    LHS = ParsePrimary(lex, t)
     return EmptyAST()
-    # LHS = ParsePrimary(lex, t)
     # return ParseBinOpRHS(0, LHS, lex)
 end
 
-function parse(filename)
+function ParsePrimary(lex, t)
+    if t.tok == tok_identifier
+        return ParseIdentifierExpr(lex, t)
+    elseif t.tok == tok_number
+        return NumberExprAST(t.val)
+    elseif t.val =="("
+        error("ParsePrimary: paren")
+    else
+        error("ParsePrimary: unkown token")
+    end
+end
+
+function ParseIdentifierExpr(lex::Lexer, t::Token)
+    lex.next.val != "(" && return VariableExprAST(t.val)
+
+    t = gettok!(lex)
+    @assert t.tok == tok_misc && t.val == "("
+    args = Vector{AbstractExprAST}()
+    while true
+        t = gettok!(lex)
+        if t.tok == tok_misc
+            if t.val == ")"
+                break
+            elseif t.val == ","
+                continue
+            else
+                error("unknown tok_misc")
+            end
+        elseif t.tok == tok_identifier
+            push!(args, ParseExpression(lex, t))
+        else
+            error("unknown expression")
+        end
+    end
+end
+
+
+function klparse(filename)
     lex = Lexer(filename)
     while true
         t = gettok!(lex)
@@ -59,12 +108,12 @@ function parse(filename)
             ast = FunctionAST(lex)
         elseif t.tok == tok_extern
             # TODO: Handle extern
-            error("extern")
+            error("klparse: extern")
         elseif t.tok == tok_identifier
             # TODO: Top-level expression
-            error("identifier")
+            error("klparse: identifier")
         else
-            error("input problem")
+            error("klparse: input problem")
         end
     end
 end
