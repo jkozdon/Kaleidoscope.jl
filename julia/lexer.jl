@@ -59,7 +59,7 @@ function getnexttok!(lex)
             eof(lex.fid) && break
             lex.last = read(lex.fid, Char)
         end
-        return gettok!(lex)
+        return getnexttok!(lex)
     elseif isdigit(lex.last) # get a number
         write(buf, lex.last)
         while !eof(lex.fid)
