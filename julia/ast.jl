@@ -50,6 +50,7 @@ struct PrototypeAST <: AbstractExprAST
 
         return new(name, args)
     end
+    PrototypeAST(name::String, args = Vector{String}()) = new(name, args)
 end
 
 struct BinaryExprAST{LHS <: AbstractExprAST, RHS <: AbstractExprAST} <: AbstractExprAST
@@ -67,11 +68,11 @@ end
 struct FunctionAST
     proto::PrototypeAST
     body::AbstractExprAST
-    function FunctionAST(lex::Lexer)
-        proto = PrototypeAST(lex)
-        body = ParseExpression(lex)
-        new(proto, body)
-    end
+end
+function FunctionAST(lex::Lexer)
+    proto = PrototypeAST(lex)
+    body = ParseExpression(lex)
+    return FunctionAST(proto, body)
 end
 
 struct CallExprAST <: AbstractExprAST
@@ -158,15 +159,18 @@ function ParseIdentifierExpr(lex::Lexer, t::Token)
             else
                 error("unknown tok_misc")
             end
-        elseif t.tok == tok_identifier
-            push!(args, ParseExpression(lex, t))
         else
-            error("unknown expression")
+            push!(args, ParseExpression(lex, t))
         end
     end
     return CallExprAST(callee, args)
 end
 
+function ParseTopLevelExpr(lex::Lexer, t::Token)
+    proto = PrototypeAST("__anon_expr")
+    body = ParseExpression(lex, t)
+    return FunctionAST(proto, body)
+end
 
 function klparse(input)
     lex = Lexer(input)
@@ -180,13 +184,11 @@ function klparse(input)
             # Handle definition
             ast = FunctionAST(lex)
         elseif t.tok == tok_extern
-            # TODO: Handle extern
+            # Handle extern
             ast = PrototypeAST(lex)
-        elseif t.tok == tok_identifier
-            # TODO: Top-level expression
-            error("klparse: identifier")
         else
-            error("klparse: input problem")
+            # Top-level expression
+            ast = ParseTopLevelExpr(lex, t)
         end
         @info """Parsed:
         $ast"""

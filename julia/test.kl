@@ -22,3 +22,13 @@ def foo(b a x y)
 extern asin(x)
 
 extern atan2(x y)
+
+x
+
+1 + 2
+
+x + y + 1 + 3*x
+
+axpy(1, 3, 4)
+
+axpy(2, x, y)
