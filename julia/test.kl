@@ -18,3 +18,7 @@ def axpby(a x b y)
 
 def foo(b a x y)
   b * axpy(a, x, y)
+
+extern asin(x)
+
+extern atan2(x y)

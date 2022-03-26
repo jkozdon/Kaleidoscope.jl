@@ -181,7 +181,7 @@ function klparse(input)
             ast = FunctionAST(lex)
         elseif t.tok == tok_extern
             # TODO: Handle extern
-            error("klparse: extern")
+            ast = PrototypeAST(lex)
         elseif t.tok == tok_identifier
             # TODO: Top-level expression
             error("klparse: identifier")
