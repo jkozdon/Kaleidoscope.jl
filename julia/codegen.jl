@@ -1,9 +1,8 @@
 struct Scope
     names::Dict{String, LLVM.Value}
     parent::Scope
-    function Scope(parent = undef)
-        return new(Dict{String, LLVM.Value}(), parent)
-    end
+    Scope(parent) = new(Dict{String, LLVM.Value}(), parent)
+    Scope() = new(Dict{String, LLVM.Value}())
 end
 
 struct CodeGen
@@ -69,4 +68,25 @@ function codegen(cg::CodeGen, ast::CallExprAST, scope::Scope)
 
     # create the actual call
     return LLVM.call!(cg.builder, callf, argsv, "calltmp")
+end
+
+function codegen(cg::CodeGen, ast::PrototypeAST, scope::Scope)
+    # Array of argument types
+    doubles = fill(LLVM.DoubleType(cg.ctx), length(ast.args))
+
+    # Create the function type for the call
+    func_type = LLVM.FunctionType(LLVM.DoubleType(cg.ctx), doubles)
+
+    # Create the IR function for the call
+    func = LLVM.Function(cg.mod, ast.name, func_type)
+
+    # Link for definition or call outside the cg.mod
+    LLVM.linkage!(func, LLVM.API.LLVMExternalLinkage)
+
+    # Set the name for all the parameters
+    for (param, arg) in zip(LLVM.parameters(func), ast.args)
+        LLVM.name!(param, arg)
+    end
+
+    return func
 end
