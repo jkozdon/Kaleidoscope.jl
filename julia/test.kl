@@ -10,5 +10,5 @@ def half()
 def identity(x)
   x
 
-# def axpy(a x y)
-#   a * x + y
+def axpy(a x y)
+  a * x + y

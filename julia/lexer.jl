@@ -22,8 +22,8 @@ mutable struct Lexer{T}
     fid::T
     last::Char
     next::Token
-    function Lexer(filename::String)
-        fid = open(filename, "r")
+    Lexer(filename::String) = Lexer(open(filename, "r"))
+    function Lexer(fid::IO)
         last = read(fid, Char)
         next = Token(tok_misc, "")
         lex = new{typeof(fid)}(fid, last, next)

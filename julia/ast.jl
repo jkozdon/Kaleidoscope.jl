@@ -1,3 +1,13 @@
+using Logging
+BinopPrecedence = Dict{Char, Int}()
+BinopPrecedence['<'] = 10
+BinopPrecedence['>'] = 10
+BinopPrecedence['+'] = 20
+BinopPrecedence['-'] = 20
+BinopPrecedence['*'] = 40
+BinopPrecedence['/'] = 40
+BinopPrecedence['\\'] = 40
+
 abstract type AbstractExprAST end
 
 struct EmptyAST <: AbstractExprAST end
@@ -42,6 +52,18 @@ struct PrototypeAST <: AbstractExprAST
     end
 end
 
+struct BinaryExprAST{LHS <: AbstractExprAST, RHS <: AbstractExprAST} <: AbstractExprAST
+    binop::Char
+    lhs::LHS
+    rhs::RHS
+    function BinaryExprAST(btok::Token, lhs::LHS, rhs::RHS) where {LHS, RHS}
+        @assert btok.tok == tok_misc
+        binop = first(btok.val)
+        @assert binop ∈ keys(BinopPrecedence)
+        return new{LHS, RHS}(binop, lhs, rhs)
+    end
+end
+
 struct FunctionAST
     proto::PrototypeAST
     body::AbstractExprAST
@@ -53,12 +75,43 @@ struct FunctionAST
 end
 
 function ParseExpression(lex::Lexer, t = gettok!(lex))
-    LHS = ParsePrimary(lex, t)
-    return EmptyAST()
-    # return ParseBinOpRHS(0, LHS, lex)
+    lhs = ParsePrimary(lex, t)
+    return ParseBinOpRHS(0, lhs, lex)
 end
 
-function ParsePrimary(lex, t)
+function GetNextTokPrec(lex::Lexer)
+    if lex.next.tok == tok_eof
+        return -1
+    else
+        l = first(lex.next.val)
+        return isletter(l) || l == ';' ? -1 : BinopPrecedence[l]
+    end
+end
+function ParseBinOpRHS(ExprPrec, lhs::AbstractExprAST, lex::Lexer)
+    while true
+        TokPrec = GetNextTokPrec(lex)
+
+        # Not a binary operator
+        TokPrec < ExprPrec && (return lhs)
+
+        # Get the binary operator
+        BinOp = gettok!(lex)
+
+        # get the RHS expression
+        rhs = ParsePrimary(lex)
+
+        # If next token has higher precedence than current token then RHS should
+        # bind with the next token
+        if TokPrec < GetNextTokPrec(lex)
+            rhs = ParseBinOpRHS(TokPrec + 1, rhs, lex)
+        end
+
+        # Create a binary operator with the lhs and rhs
+        lhs = BinaryExprAST(BinOp, lhs, rhs)
+    end
+end
+
+function ParsePrimary(lex, t = gettok!(lex))
     if t.tok == tok_identifier
         return ParseIdentifierExpr(lex, t)
     elseif t.tok == tok_number
@@ -95,8 +148,8 @@ function ParseIdentifierExpr(lex::Lexer, t::Token)
 end
 
 
-function klparse(filename)
-    lex = Lexer(filename)
+function klparse(input)
+    lex = Lexer(input)
     while true
         t = gettok!(lex)
         if t.tok == tok_eof
@@ -115,5 +168,7 @@ function klparse(filename)
         else
             error("klparse: input problem")
         end
+        @info """Parsed:
+        $ast"""
     end
 end
