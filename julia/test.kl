@@ -16,5 +16,5 @@ def axpy(a x y)
 def axpby(a x b y)
   (a * x) + (b * y)
 
-# def foo(b a x y)
-#   b * axpy(a, x, y)
+def foo(b a x y)
+  b * axpy(a, x, y)

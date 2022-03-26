@@ -58,7 +58,7 @@ struct BinaryExprAST{LHS <: AbstractExprAST, RHS <: AbstractExprAST} <: Abstract
     rhs::RHS
     function BinaryExprAST(btok::Token, lhs::LHS, rhs::RHS) where {LHS, RHS}
         @assert btok.tok == tok_misc
-        binop = first(btok.val)
+        binop = only(btok.val)
         @assert binop ∈ keys(BinopPrecedence)
         return new{LHS, RHS}(binop, lhs, rhs)
     end
@@ -72,6 +72,11 @@ struct FunctionAST
         body = ParseExpression(lex)
         new(proto, body)
     end
+end
+
+struct CallExprAST <: AbstractExprAST
+    callee::String
+    args::Vector{AbstractExprAST}
 end
 
 function ParseExpression(lex::Lexer, t = gettok!(lex))
@@ -134,8 +139,12 @@ function ParsePrimary(lex, t = gettok!(lex))
 end
 
 function ParseIdentifierExpr(lex::Lexer, t::Token)
+    # Not a variable, just an expression
     lex.next.val != "(" && return VariableExprAST(t.val)
 
+    callee = t.val
+
+    # Eat the function arguments
     t = gettok!(lex)
     @assert t.tok == tok_misc && t.val == "("
     args = Vector{AbstractExprAST}()
@@ -155,6 +164,7 @@ function ParseIdentifierExpr(lex::Lexer, t::Token)
             error("unknown expression")
         end
     end
+    return CallExprAST(callee, args)
 end
 
 
