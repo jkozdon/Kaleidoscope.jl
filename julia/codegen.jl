@@ -90,3 +90,29 @@ function codegen(cg::CodeGen, ast::PrototypeAST, scope::Scope)
 
     return func
 end
+
+function codegen(cg::CodeGen, ast::FunctionAST, scope::Scope)
+
+    # Create the function prototype
+    func = codegen(cg, ast.proto, scope)
+
+    # Create new basic block
+    basicblock = LLVM.BasicBlock(func, "entry"; ctx = cg.ctx)
+    LLVM.position!(cg.builder, basicblock)
+
+    # Create a new scope for the function call
+    new_scope = Scope(scope)
+
+    # push parameters for the function call
+    for param in LLVM.parameters(func)
+        name = LLVM.name(param)
+        new_scope.names[name] = param
+    end
+
+    retval = codegen(cg, ast.body, new_scope)
+
+    LLVM.ret!(cg.builder, retval)
+    LLVM.verify(func)
+
+    return func
+end

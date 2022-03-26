@@ -1,4 +1,4 @@
-using LLVM
+import LLVM
 include("lexer.jl")
 include("ast.jl")
 include("codegen.jl")

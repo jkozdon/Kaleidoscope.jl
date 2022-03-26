@@ -1,5 +1,7 @@
-1
-
+def axpy(a x y)
+  a * x + y
+# foo(a b)
+# 
 # def one()
 #   1
 # 
