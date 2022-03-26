@@ -84,9 +84,16 @@ function GetNextTokPrec(lex::Lexer)
         return -1
     else
         l = first(lex.next.val)
-        return isletter(l) || l == ';' ? -1 : BinopPrecedence[l]
+        if isletter(l)
+            return -1
+        elseif l ∈ keys(BinopPrecedence)
+            return BinopPrecedence[l]
+        else
+            return -1
+        end
     end
 end
+
 function ParseBinOpRHS(ExprPrec, lhs::AbstractExprAST, lex::Lexer)
     while true
         TokPrec = GetNextTokPrec(lex)
@@ -117,9 +124,12 @@ function ParsePrimary(lex, t = gettok!(lex))
     elseif t.tok == tok_number
         return NumberExprAST(t.val)
     elseif t.val =="("
-        error("ParsePrimary: paren")
+        ast = ParseExpression(lex)
+        t = gettok!(lex)
+        @assert t.val == ")"
+        return ast
     else
-        error("ParsePrimary: unkown token")
+        error("ParsePrimary: unkown token: $t")
     end
 end
 
