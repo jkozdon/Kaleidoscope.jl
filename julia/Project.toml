@@ -1,2 +1,3 @@
 [deps]
+LLVM = "929cbde3-209d-540e-8aea-75f648917ca0"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"

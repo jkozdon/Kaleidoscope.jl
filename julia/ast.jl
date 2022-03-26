@@ -1,12 +1,12 @@
 using Logging
 BinopPrecedence = Dict{Char, Int}()
 BinopPrecedence['<'] = 10
-BinopPrecedence['>'] = 10
+# BinopPrecedence['>'] = 10
 BinopPrecedence['+'] = 20
 BinopPrecedence['-'] = 20
 BinopPrecedence['*'] = 40
-BinopPrecedence['/'] = 40
-BinopPrecedence['\\'] = 40
+# BinopPrecedence['/'] = 40
+# BinopPrecedence['\\'] = 40
 
 abstract type AbstractExprAST end
 
@@ -174,6 +174,7 @@ end
 
 function klparse(input)
     lex = Lexer(input)
+    cg = CodeGen()
     while true
         t = gettok!(lex)
         if t.tok == tok_eof

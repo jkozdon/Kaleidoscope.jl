@@ -1,5 +1,7 @@
+using LLVM
 include("lexer.jl")
 include("ast.jl")
+include("codegen.jl")
 
 let
     filename = "test.kl"
