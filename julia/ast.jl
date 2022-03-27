@@ -172,14 +172,18 @@ function ParseTopLevelExpr(lex::Lexer, t::Token)
     return FunctionAST(proto, body)
 end
 
-function klparse(inputs = nothing)
+function listfunctions(mod)
+    println("Functions:")
+    println.("    ", LLVM.name.(LLVM.functions(mod)))
+    nothing
+end
+
+function klparse(inputs = nothing; cg = CodeGen(), scope = Scope())
     if isnothing(inputs)
         inputs = (stdin, )
     elseif !(inputs isa Tuple)
         inputs = (inputs,)
     end
-    cg = CodeGen()
-    scope = Scope()
     for input in inputs
         lex = Lexer(input)
         while true
@@ -209,4 +213,5 @@ function klparse(inputs = nothing)
             end
         end
     end
+    return (cg = cg, scope = scope)
 end
