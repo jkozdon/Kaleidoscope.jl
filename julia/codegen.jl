@@ -53,7 +53,7 @@ end
 
 function codegen(cg::CodeGen, ast::CallExprAST, scope::Scope)
     # Look up the function in module table
-    if !haskey!(LLVM.functions(cg.mod), ast.callee)
+    if !haskey(LLVM.functions(cg.mod), ast.callee)
         error("unknown function $(ast.callee)")
     end
     callf = LLVM.functions(cg.mod)[ast.callee]

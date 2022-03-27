@@ -172,26 +172,41 @@ function ParseTopLevelExpr(lex::Lexer, t::Token)
     return FunctionAST(proto, body)
 end
 
-function klparse(input)
-    lex = Lexer(input)
+function klparse(inputs = nothing)
+    if isnothing(inputs)
+        inputs = (stdin, )
+    elseif !(inputs isa Tuple)
+        inputs = (inputs,)
+    end
     cg = CodeGen()
-    while true
-        t = gettok!(lex)
-        if t.tok == tok_eof
-            return
-        elseif t.val == ";"
-            continue
-        elseif t.tok == tok_def
-            # Handle definition
-            ast = FunctionAST(lex)
-        elseif t.tok == tok_extern
-            # Handle extern
-            ast = PrototypeAST(lex)
-        else
-            # Top-level expression
-            ast = ParseTopLevelExpr(lex, t)
+    scope = Scope()
+    for input in inputs
+        lex = Lexer(input)
+        while true
+            t = gettok!(lex)
+            if t.tok == tok_eof
+                break
+            elseif t.val == ";"
+                continue
+            elseif t.tok == tok_def
+                # Handle definition
+                ast = FunctionAST(lex)
+                parse_type = "function definition:"
+            elseif t.tok == tok_extern
+                # Handle extern
+                ast = PrototypeAST(lex)
+                parse_type = "extern"
+            else
+                # Top-level expression
+                ast = ParseTopLevelExpr(lex, t)
+                parse_type = "top-level expression"
+            end
+            @info """Parsed $(parse_type):
+            $(codegen(cg, ast, scope))
+            """
+            if input isa Base.TTY
+                print("kaleidoscope> ")
+            end
         end
-        @info """Parsed:
-        $ast"""
     end
 end
