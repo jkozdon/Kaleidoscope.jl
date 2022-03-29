@@ -5,7 +5,7 @@ struct Scope
     Scope() = new(Dict{String, LLVM.Value}())
 end
 
-struct CodeGen
+mutable struct CodeGen
     ctx::LLVM.Context
     builder::LLVM.Builder
     mod::LLVM.Module
@@ -52,9 +52,9 @@ function codegen(cg::CodeGen, ast::BinaryExprAST, scope::Scope)
 end
 
 function codegen(cg::CodeGen, ast::CallExprAST, scope::Scope)
-    # Look up the function in module table
+    # If the function prototype isn't in the module already, add it
     if !haskey(LLVM.functions(cg.mod), ast.callee)
-        error("unknown function $(ast.callee)")
+        codegen(cg, PrototypeAST(ast.callee, length(ast.args)), scope)
     end
     callf = LLVM.functions(cg.mod)[ast.callee]
 

@@ -12,6 +12,7 @@ filename = "test2.kl"
 # LLVM.run!(fpm, fn)
 # @show fn
 
+#=
 mpm = LLVM.ModulePassManager()
 
 fn = LLVM.functions(cg.mod)["foo"]
@@ -28,3 +29,19 @@ for pass in (
     local fn = LLVM.functions(cg.mod)["foo"]
     @show fn
 end
+
+
+function run(mod::LLVM.Module, entry::String)
+    res_jl = 0.0
+    # LLVM.JIT(mod) do engine
+        if !haskey(LLVM.functions(engine), entry)
+            error("did not find entry function '$entry' in module")
+        end
+        f = LLVM.functions(engine)[entry]
+        res = LLVM.run(engine, f)
+        res_jl = convert(Float64, res, LLVM.DoubleType(LLVM.context(mod)))
+        LLVM.dispose(res)
+    # end
+    return res_jl
+end
+=#

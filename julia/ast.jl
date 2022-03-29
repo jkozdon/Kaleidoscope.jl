@@ -50,6 +50,10 @@ struct PrototypeAST <: AbstractExprAST
 
         return new(name, args)
     end
+    function PrototypeAST(name::String, numargs::Int)
+        args = fill("tmp", numargs)
+        return new(name, args)
+    end
     PrototypeAST(name::String, args = Vector{String}()) = new(name, args)
 end
 
@@ -184,7 +188,11 @@ function klparse(inputs = nothing; cg = CodeGen(), scope = Scope())
     elseif !(inputs isa Tuple)
         inputs = (inputs,)
     end
+    jit = LLVM.JIT(cg.mod)
     for input in inputs
+        if input isa Base.TTY
+            print("kaleidoscope> ")
+        end
         lex = Lexer(input)
         while true
             t = gettok!(lex)
@@ -205,12 +213,32 @@ function klparse(inputs = nothing; cg = CodeGen(), scope = Scope())
                 ast = ParseTopLevelExpr(lex, t)
                 parse_type = "top-level expression"
             end
+            #=
             @info """Parsed $(parse_type):
             $(codegen(cg, ast, scope))
             """
+            =#
+            codegen(cg, ast, scope)
+            push!(jit, cg.mod)
+
+            # If this is a top-level expression, execute it
+            entry = "__anon_expr"
+            if haskey(LLVM.functions(cg.mod), entry)
+                f = LLVM.functions(jit)[entry]
+                res_jl = 0.0
+                res = LLVM.run(jit, f)
+                res_jl = convert(Float64, res, LLVM.DoubleType(cg.ctx))
+                LLVM.dispose(res)
+                LLVM.dispose(cg.mod)
+                println(res_jl)
+            end
             if input isa Base.TTY
                 print("kaleidoscope> ")
             end
+
+            # Create a new module for next function
+            # FIXME: Do we need a new Context too?
+            cg.mod = LLVM.Module("KaleidoscopeModule"; cg.ctx)
         end
     end
     return (cg = cg, scope = scope)
