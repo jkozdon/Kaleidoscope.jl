@@ -22,6 +22,22 @@ struct VariableExprAST <: AbstractExprAST
     VariableExprAST(str::String) = new(str)
 end
 
+struct IfExprAST <: AbstractExprAST
+    cond_expr::AbstractExprAST
+    then_expr::AbstractExprAST
+    else_expr::AbstractExprAST
+    function IfExprAST(lex::Lexer)
+        cond_expr = ParseExpression(lex)
+        t = gettok!(lex)
+        @assert t.tok == tok_then
+        then_expr = ParseExpression(lex)
+        t = gettok!(lex)
+        @assert t.tok == tok_else
+        else_expr = ParseExpression(lex)
+        new(cond_expr, then_expr, else_expr)
+    end
+end
+
 struct PrototypeAST <: AbstractExprAST
     name::String
     args::Vector
@@ -137,6 +153,9 @@ function ParsePrimary(lex, t = gettok!(lex))
         ast = ParseExpression(lex)
         t = gettok!(lex)
         @assert t.val == ")"
+        return ast
+    elseif t.tok == tok_if
+        ast = IfExprAST(lex)
         return ast
     else
         error("ParsePrimary: unkown token: $t")

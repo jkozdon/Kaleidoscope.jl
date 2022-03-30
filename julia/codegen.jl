@@ -116,3 +116,48 @@ function codegen(cg::CodeGen, ast::FunctionAST, scope::Scope)
 
     return func
 end
+
+function codegen(cg::CodeGen, ast::IfExprAST, scope::Scope)
+    new_scope = Scope(scope)
+
+    # Generate code for conditional
+    cond_cg = codegen(cg, ast.cond_expr, new_scope)
+    zero = LLVM.ConstantFP(LLVM.DoubleType(cg.ctx), 0.0)
+    condV = LLVM.fcmp!(cg.builder, LLVM.API.LLVMRealONE, cond_cg, zero, "ifcond")
+
+    # Generate basic blocks for then, else, and merge
+    thefunction = LLVM.parent(LLVM.position(cg.builder))
+    # XXX: When not create without function as in tutorial???
+    thenBB = LLVM.BasicBlock(thefunction, "then"; cg.ctx)
+    elseBB = LLVM.BasicBlock(thefunction, "else"; cg.ctx)
+    mergeBB = LLVM.BasicBlock(thefunction, "ifcont"; cg.ctx)
+
+    # Conditional branch using condV for then and else
+    LLVM.br!(cg.builder, condV, thenBB, elseBB)
+
+    ## then branch
+    # Go to the end of the then basic block
+    LLVM.position!(cg.builder, thenBB)
+    # Generate code for the then
+    then_cg = codegen(cg, ast.then_expr, scope)
+    # branch to merge basic block
+    LLVM.br!(cg.builder, mergeBB)
+    # Reset the then basic block position
+    thenBB = position(cg.builder)
+
+    ## else branch
+    # Go to the end of the else basic block
+    LLVM.position!(cg.builder, elseBB)
+    # Generate code for the else
+    else_cg = codegen(cg, ast.else_expr, scope)
+    # branch to merge basic block
+    LLVM.br!(cg.builder, mergeBB)
+    # Reset the else basic block position
+    elseBB = position(cg.builder)
+
+    ## merge command
+    LLVM.position!(cg.builder, mergeBB)
+    phi = LLVM.phi!(cg.builder, LLVM.DoubleType(cg.ctx), "iftmp")
+    append!(LLVM.incoming(phi), [(then_cg, thenBB), (else_cg, elseBB)])
+    error()
+end

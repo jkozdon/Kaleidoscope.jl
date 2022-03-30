@@ -9,8 +9,13 @@
     tok_identifier = -4
     tok_number = -5
 
+    # control
+    tok_if = -6
+    tok_then = -7
+    tok_else = -8
+
     # misc
-    tok_misc = -6
+    tok_misc = -100
 end
 
 struct Token
@@ -80,6 +85,12 @@ function getnexttok!(lex)
             tok_def
         elseif val == "extern"
             tok_extern
+        elseif val == "if"
+            tok_if
+        elseif val == "then"
+            tok_then
+        elseif val == "else"
+            tok_else
         else
             tok_identifier
         end
